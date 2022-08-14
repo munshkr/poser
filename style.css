@@ -1,3 +1,9 @@
 * {
     font-family: sans-serif;
 }
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #010101;
+}
