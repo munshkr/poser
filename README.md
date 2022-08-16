@@ -1,6 +1,6 @@
-# camtrig
+# Poser
 
-Track camera changes and trigger MIDI messages
+Track camera changes via pose estimation, and trigger WebSocket and MIDI messages
 
 ## Development
 
