@@ -34,7 +34,22 @@ function setup() {
   video.size(camWidth, camHeight);
 
   // Create a new poseNet method with a single detection
-  poseNet = ml5.poseNet(video, modelReady);
+  const options = {
+    architecture: 'MobileNetV1',
+    imageScaleFactor: 0.3,
+    outputStride: 16,
+    flipHorizontal: false,
+    minConfidence: 0.5,
+    maxPoseDetections: 5,
+    scoreThreshold: 0.5,
+    nmsRadius: 20,
+    detectionType: 'multiple',
+    inputResolution: 513,
+    multiplier: 0.75,
+    quantBytes: 2,
+  };
+
+  poseNet = ml5.poseNet(video, modelReady, options);
   // This sets up an event that fills the global variable "poses"
   // with an array every time new poses are detected
   poseNet.on('pose', function (results) {
