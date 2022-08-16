@@ -12,6 +12,11 @@ let videoRatio, videoWidth, videoHeight, videoOffsetX, videoOffsetY;
 let poseNet;
 let poses = [];
 
+let parameters = {
+  scoreThreshold: 0.2
+}
+
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
@@ -39,7 +44,7 @@ function setup() {
   video.hide();
 
   // Setup GUI
-  gui.add(document, 'title');
+  gui.add(parameters, 'scoreThreshold', 0, 1);
 }
 
 function windowResized() {
@@ -106,7 +111,7 @@ function drawKeypoints() {
       // A keypoint is an object describing a body part (like rightArm or leftShoulder)
       let keypoint = pose.keypoints[j];
       // Only draw an ellipse is the pose probability is bigger than 0.2
-      if (keypoint.score > 0.2) {
+      if (keypoint.score > parameters.scoreThreshold) {
         fill(255, 0, 0);
         noStroke();
         ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
