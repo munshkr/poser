@@ -13,9 +13,8 @@ let poseNet;
 let poses = [];
 
 let parameters = {
-  scoreThreshold: 0.2
+  keypointThreshold: 0.2,
 }
-
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -33,7 +32,7 @@ function setup() {
   video.elt.setAttribute('playsinline', '');
   video.size(camWidth, camHeight);
 
-  // Create a new poseNet method with a single detection
+  // Create a new poseNet method
   const options = {
     architecture: 'MobileNetV1',
     imageScaleFactor: 0.3,
@@ -48,7 +47,6 @@ function setup() {
     multiplier: 0.75,
     quantBytes: 2,
   };
-
   poseNet = ml5.poseNet(video, modelReady, options);
   // This sets up an event that fills the global variable "poses"
   // with an array every time new poses are detected
@@ -59,7 +57,12 @@ function setup() {
   video.hide();
 
   // Setup GUI
-  gui.add(parameters, 'scoreThreshold', 0, 1);
+  const poseNetFolder = gui.addFolder('PoseNet');
+  poseNetFolder.add(poseNet, 'minConfidence', 0, 1);
+  poseNetFolder.add(poseNet, 'maxPoseDetections', 1, 8, 1);
+  poseNetFolder.add(poseNet, 'scoreThreshold', 0, 1);
+  poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']);
+  poseNetFolder.add(parameters, 'keypointThreshold', 0, 1);
 }
 
 function windowResized() {
@@ -126,7 +129,7 @@ function drawKeypoints() {
       // A keypoint is an object describing a body part (like rightArm or leftShoulder)
       let keypoint = pose.keypoints[j];
       // Only draw an ellipse is the pose probability is bigger than 0.2
-      if (keypoint.score > parameters.scoreThreshold) {
+      if (keypoint.score > parameters.keypointThreshold) {
         fill(255, 0, 0);
         noStroke();
         ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
