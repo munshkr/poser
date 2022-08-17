@@ -63,6 +63,10 @@ function setup() {
   poseNetFolder.add(poseNet, 'scoreThreshold', 0, 1);
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']);
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1);
+
+  setInterval(() => {
+    document.getElementById("framerate").innerText = getFrameRate().toFixed(2);
+  }, 250);
 }
 
 function windowResized() {
