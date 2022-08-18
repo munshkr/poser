@@ -7,13 +7,21 @@ const gui = new lil.GUI();
 const camWidth = 640;
 const camHeight = 480;
 
+const KEYPOINT_TYPES = ['leftEye', 'leftEar', 'rightEye', 'rightEar'];
+
 let video;
 let videoRatio, videoWidth, videoHeight, videoOffsetX, videoOffsetY;
 let poseNet;
-let poses = [];
+let posesResults = [];
+
+const zones = [
+  { x: -8, y: -7, width: 3, height: 3, relativeTo: 'rightEye' }
+];
+const zoneFolders = [];
 
 let parameters = {
   keypointThreshold: 0.2,
+  knownDistEyeCm: 3.3
 }
 
 function setup() {
@@ -34,27 +42,20 @@ function setup() {
 
   // Create a new poseNet method
   const options = {
-    architecture: 'MobileNetV1',
-    imageScaleFactor: 0.3,
-    outputStride: 16,
     flipHorizontal: false,
-    minConfidence: 0.5,
-    maxPoseDetections: 5,
-    scoreThreshold: 0.5,
-    nmsRadius: 20,
-    detectionType: 'multiple',
-    inputResolution: 513,
-    multiplier: 0.75,
-    quantBytes: 2,
+    detectionType: 'single',
+    maxPoseDetections: 1,
   };
-  poseNet = ml5.poseNet(video, modelReady, options);
+  poseNet = ml5.poseNet(video, options, modelReady);
   // This sets up an event that fills the global variable "poses"
   // with an array every time new poses are detected
   poseNet.on('pose', function (results) {
-    poses = results;
+    posesResults = results;
   });
 
   video.hide();
+
+  gui.add(parameters, 'knownDistEyeCm', 2.5, 3.8);
 
   // Setup GUI
   const poseNetFolder = gui.addFolder('PoseNet');
@@ -64,9 +65,30 @@ function setup() {
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']);
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1);
 
+  updateZoneFolders();
+
   setInterval(() => {
     document.getElementById("framerate").innerText = getFrameRate().toFixed(2);
   }, 250);
+}
+
+function updateZoneFolders() {
+  // Destroy all zone folders
+  for (let i = 0; i < zoneFolders.length; i++) {
+    const zoneFolder = zoneFolders[i];
+    zoneFolder.destroy();
+  }
+
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i];
+    const zoneFolder = gui.addFolder(`Zone ${i + 1}`);
+    zoneFolder.add(zone, 'x', -30, 30);
+    zoneFolder.add(zone, 'y', -30, 30);
+    zoneFolder.add(zone, 'width', 0, 30);
+    zoneFolder.add(zone, 'height', 0, 40);
+    zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES);
+    zoneFolders.push(zoneFolder);
+  }
 }
 
 function windowResized() {
@@ -101,6 +123,7 @@ function draw() {
 
   drawKeypoints();
   drawSkeleton();
+  drawZones();
 
   pop();
 }
@@ -126,9 +149,9 @@ function drawVideoRect() {
 // A function to draw ellipses over the detected keypoints
 function drawKeypoints() {
   // Loop through all the poses detected
-  for (let i = 0; i < poses.length; i++) {
+  for (let i = 0; i < posesResults.length; i++) {
     // For each pose detected, loop through all the keypoints
-    let pose = poses[i].pose;
+    let pose = posesResults[i].pose;
     for (let j = 0; j < pose.keypoints.length; j++) {
       // A keypoint is an object describing a body part (like rightArm or leftShoulder)
       let keypoint = pose.keypoints[j];
@@ -145,8 +168,8 @@ function drawKeypoints() {
 // A function to draw the skeletons
 function drawSkeleton() {
   // Loop through all the skeletons detected
-  for (let i = 0; i < poses.length; i++) {
-    let skeleton = poses[i].skeleton;
+  for (let i = 0; i < posesResults.length; i++) {
+    let skeleton = posesResults[i].skeleton;
     // For every skeleton, loop through all body connections
     for (let j = 0; j < skeleton.length; j++) {
       let partA = skeleton[j][0];
@@ -155,4 +178,37 @@ function drawSkeleton() {
       line(partA.position.x, partA.position.y, partB.position.x, partB.position.y);
     }
   }
+}
+
+function drawZones() {
+  const poseResults = posesResults[0];
+  if (!poseResults) return;
+
+  // console.log(`1 pixel is ${calcCmPerPixelRatio()} cm`);
+  const r = calcCmPerPixelRatio();
+
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i];
+    const kpName = zone.relativeTo;
+    const kp = poseResults.pose[kpName];
+    if (kp.confidence >= 0.5) {
+      stroke(255, 0, 0);
+      fill(255, 0, 0, 80);
+      const x = (kp.x + zone.x / r);
+      const y = (kp.y + zone.y / r);
+      const w = zone.width / r;
+      const h = zone.height / r;
+      rect(x, y, w, h);
+    }
+  }
+}
+
+function calcCmPerPixelRatio() {
+  if (posesResults.length == 0) return;
+  const { pose } = posesResults[0];
+  const leftEye = pose['leftEye'];
+  const rightEye = pose['rightEye'];
+  if (leftEye.confidence < 0.5 || rightEye.confidence < 0.5) return;
+  const distEye = Math.max(leftEye.x, rightEye.x) - Math.min(leftEye.x, rightEye.x);
+  return parameters.knownDistEyeCm / distEye;
 }
