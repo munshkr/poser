@@ -238,43 +238,54 @@ function calculateMotionInZones() {
 
   capture.loadPixels();
 
-  for (let j = 0; j < zones.length; j++) {
-    const zone = zones[j];
+  if (capture.pixels.length > 0) {
+    const pixels = capture.pixels;
 
-    let total = 0;
-    if (capture.pixels.length > 0) { // don't forget this!
-      if (!previousPixels) {
-        previousPixels = copyImage(capture.pixels, previousPixels);
-      } else {
-        const pixels = capture.pixels;
-        const thresholdAmount = (parameters.motionThreshold * 255) * 3;
-        for (let x = zone._x; x < zone._x + zone._w; x++) {
-          for (let y = zone._y; y < zone._y + zone._h; y++) {
-            let i = (x + (y * capture.width)) * 4;
-            // calculate the differences
-            const rdiff = Math.abs(pixels[i + 0] - previousPixels[i + 0]);
-            const gdiff = Math.abs(pixels[i + 1] - previousPixels[i + 1]);
-            const bdiff = Math.abs(pixels[i + 2] - previousPixels[i + 2]);
-            // copy the current pixels to previousPixels
-            previousPixels[i + 0] = pixels[i + 0];
-            previousPixels[i + 1] = pixels[i + 1];
-            previousPixels[i + 2] = pixels[i + 2];
-            const diffs = rdiff + gdiff + bdiff;
-            let output = 0;
-            if (diffs > thresholdAmount) {
-              output = 255;
-              total += diffs;
-            }
+    // Create previousPixels array
+    if (!previousPixels) {
+      previousPixels = copyImage(pixels);
+    }
 
-            pixels[i++] = output;
-            pixels[i++] = output;
-            pixels[i++] = output;
+    // Copy curent pixels (because we're going to modify them with diff)
+    const currentPixels = copyImage(pixels);
+
+    // For each zone, calculate difference to detect changes between previous
+    // and current frame.
+    const thresholdAmount = parameters.motionThreshold * 255 * 3;
+    for (let j = 0; j < zones.length; j++) {
+      const zone = zones[j];
+
+      let diffCount = 0;
+      for (let x = zone._x; x < zone._x + zone._w; x++) {
+        for (let y = zone._y; y < zone._y + zone._h; y++) {
+          let i = (x + (y * capture.width)) * 4;
+
+          const rdiff = Math.abs(currentPixels[i + 0] - previousPixels[i + 0]);
+          const gdiff = Math.abs(currentPixels[i + 1] - previousPixels[i + 1]);
+          const bdiff = Math.abs(currentPixels[i + 2] - previousPixels[i + 2]);
+
+          const totalDiff = rdiff + gdiff + bdiff;
+          let output = 0;
+          if (totalDiff > thresholdAmount) {
+            output = 255;
+            diffCount += 1;
           }
+
+          pixels[i++] = output;
+          pixels[i++] = output;
+          pixels[i++] = output;
         }
       }
-    }
-    zone.motion = total;
-  }
 
-  capture.updatePixels();
+      console.log("motion", diffCount)
+      zone.motion = diffCount;
+    }
+
+    // Update all pixels of previous frame (using currPixels, not capture.pixels)
+    for (let i = 0; i < pixels.length; i++) {
+      previousPixels[i] = currentPixels[i];
+    }
+
+    capture.updatePixels();
+  }
 }
