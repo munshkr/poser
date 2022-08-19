@@ -9,10 +9,11 @@ const camHeight = 480;
 
 const KEYPOINT_TYPES = ['leftEye', 'leftEar', 'rightEye', 'rightEar'];
 
-let video;
+let capture;
 let videoRatio, videoWidth, videoHeight, videoOffsetX, videoOffsetY;
 let poseNet;
 let posesResults = [];
+let previousPixels;
 
 const zones = [
   { x: -8, y: -7, width: 3, height: 3, relativeTo: 'rightEye' }
@@ -21,14 +22,15 @@ const zoneFolders = [];
 
 let parameters = {
   keypointThreshold: 0.2,
-  knownDistEyeCm: 3.3
+  knownDistEyeCm: 3.3,
+  motionThreshold: 0.3,
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
   // Create capture
-  video = createCapture({
+  capture = createCapture({
     audio: false,
     video: {
       width: camWidth,
@@ -37,8 +39,8 @@ function setup() {
   }, function () {
     console.log('Capture ready')
   });
-  video.elt.setAttribute('playsinline', '');
-  video.size(camWidth, camHeight);
+  capture.elt.setAttribute('playsinline', '');
+  capture.size(camWidth, camHeight);
 
   // Create a new poseNet method
   const options = {
@@ -46,16 +48,17 @@ function setup() {
     detectionType: 'single',
     maxPoseDetections: 1,
   };
-  poseNet = ml5.poseNet(video, options, modelReady);
+  poseNet = ml5.poseNet(capture, options, modelReady);
   // This sets up an event that fills the global variable "poses"
   // with an array every time new poses are detected
   poseNet.on('pose', function (results) {
     posesResults = results;
   });
 
-  video.hide();
+  capture.hide();
 
   gui.add(parameters, 'knownDistEyeCm', 2.5, 3.8);
+  gui.add(parameters, 'motionThreshold', 0, 1);
 
   // Setup GUI
   const poseNetFolder = gui.addFolder('PoseNet');
@@ -104,14 +107,12 @@ function draw() {
 
   // Render capture image to canvas, preserving aspect ratio
   updateVideoSize()
-  image(video, videoOffsetX, videoOffsetY, videoWidth, videoHeight);
+  image(capture, videoOffsetX, videoOffsetY, videoWidth, videoHeight);
 
-  // Load pixels
-  video.loadPixels();
-  if (video.pixels.length > 0) { // don't forget this!
-  }
+  updateZonePixelPosSize();
+  calculateMotionInZones();
 
-  // We can call both functions to draw all keypoints and the skeletons
+  // Draw things
   push();
 
   const offX = width / 2 - videoWidth / 2
@@ -129,12 +130,12 @@ function draw() {
 }
 
 function updateVideoSize() {
-  const hRatio = height / video.height;
-  const wRatio = width / video.width;
+  const hRatio = height / capture.height;
+  const wRatio = width / capture.width;
 
   videoRatio = Math.min(hRatio, wRatio);
-  videoWidth = video.width * videoRatio;
-  videoHeight = video.height * videoRatio;
+  videoWidth = capture.width * videoRatio;
+  videoHeight = capture.height * videoRatio;
 
   videoOffsetX = (width / 2) - (videoWidth / 2);
   videoOffsetY = (height / 2) - (videoHeight / 2);
@@ -143,7 +144,7 @@ function updateVideoSize() {
 function drawVideoRect() {
   noFill();
   stroke(255, 255, 0);
-  rect(0, 0, video.width - 1, video.height - 1);
+  rect(0, 0, capture.width - 1, capture.height - 1);
 }
 
 // A function to draw ellipses over the detected keypoints
@@ -184,9 +185,6 @@ function drawZones() {
   const poseResults = posesResults[0];
   if (!poseResults) return;
 
-  // console.log(`1 pixel is ${calcCmPerPixelRatio()} cm`);
-  const r = calcCmPerPixelRatio();
-
   for (let i = 0; i < zones.length; i++) {
     const zone = zones[i];
     const kpName = zone.relativeTo;
@@ -194,11 +192,7 @@ function drawZones() {
     if (kp.confidence >= 0.5) {
       stroke(255, 0, 0);
       fill(255, 0, 0, 80);
-      const x = (kp.x + zone.x / r);
-      const y = (kp.y + zone.y / r);
-      const w = zone.width / r;
-      const h = zone.height / r;
-      rect(x, y, w, h);
+      rect(zone._x, zone._y, zone._w, zone._h);
     }
   }
 }
@@ -211,4 +205,77 @@ function calcCmPerPixelRatio() {
   if (leftEye.confidence < 0.5 || rightEye.confidence < 0.5) return;
   const distEye = Math.max(leftEye.x, rightEye.x) - Math.min(leftEye.x, rightEye.x);
   return parameters.knownDistEyeCm / distEye;
+}
+
+function copyImage(src, dst) {
+  let n = src.length;
+  if (!dst || dst.length != n) dst = new src.constructor(n);
+  while (n--) dst[n] = src[n];
+  return dst;
+}
+
+function updateZonePixelPosSize() {
+  const poseResults = posesResults[0];
+  if (!poseResults) return;
+
+  const r = calcCmPerPixelRatio();
+
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i];
+    const kpName = zone.relativeTo;
+    const kp = poseResults.pose[kpName];
+    if (kp.confidence >= 0.5) {
+      zone._x = Math.round(kp.x + zone.x / r);
+      zone._y = Math.round(kp.y + zone.y / r);
+      zone._w = Math.round(zone.width / r);
+      zone._h = Math.round(zone.height / r);
+    }
+  }
+}
+
+function calculateMotionInZones() {
+  if (zones.length == 0) return;
+
+  capture.loadPixels();
+
+  for (let j = 0; j < zones.length; j++) {
+    const zone = zones[j];
+
+    let total = 0;
+    if (capture.pixels.length > 0) { // don't forget this!
+      if (!previousPixels) {
+        previousPixels = copyImage(capture.pixels, previousPixels);
+      } else {
+        const pixels = capture.pixels;
+        const thresholdAmount = (parameters.motionThreshold * 255) * 3;
+        for (let x = zone._x; x < zone._x + zone._w; x++) {
+          for (let y = zone._y; y < zone._y + zone._h; y++) {
+            let i = (x + (y * capture.width)) * 4;
+            // calculate the differences
+            const rdiff = Math.abs(pixels[i + 0] - previousPixels[i + 0]);
+            const gdiff = Math.abs(pixels[i + 1] - previousPixels[i + 1]);
+            const bdiff = Math.abs(pixels[i + 2] - previousPixels[i + 2]);
+            // copy the current pixels to previousPixels
+            previousPixels[i + 0] = pixels[i + 0];
+            previousPixels[i + 1] = pixels[i + 1];
+            previousPixels[i + 2] = pixels[i + 2];
+            const diffs = rdiff + gdiff + bdiff;
+            let output = 0;
+            if (diffs > thresholdAmount) {
+              output = 255;
+              total += diffs;
+            }
+
+            // TODO: Put output pixels in a different image
+            // pixels[i++] = output;
+            // pixels[i++] = output;
+            // pixels[i++] = output;
+          }
+        }
+      }
+    }
+    zone.motion = total;
+  }
+
+  // capture.updatePixels();
 }
