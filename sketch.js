@@ -266,10 +266,9 @@ function calculateMotionInZones() {
               total += diffs;
             }
 
-            // TODO: Put output pixels in a different image
-            // pixels[i++] = output;
-            // pixels[i++] = output;
-            // pixels[i++] = output;
+            pixels[i++] = output;
+            pixels[i++] = output;
+            pixels[i++] = output;
           }
         }
       }
@@ -277,5 +276,5 @@ function calculateMotionInZones() {
     zone.motion = total;
   }
 
-  // capture.updatePixels();
+  capture.updatePixels();
 }
