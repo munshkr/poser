@@ -7,7 +7,26 @@ const gui = new lil.GUI();
 const camWidth = 640;
 const camHeight = 480;
 
-const KEYPOINT_TYPES = ['leftEye', 'leftEar', 'rightEye', 'rightEar'];
+const KEYPOINT_TYPES = [
+  null,
+  'leftAnkle',
+  'leftEar',
+  'leftElbow',
+  'leftEye',
+  'leftHip',
+  'leftKnee',
+  'leftShoulder',
+  'leftWrist',
+  'nose',
+  'rightAnkle',
+  'rightEar',
+  'rightElbow',
+  'rightEye',
+  'rightHip',
+  'rightKnee',
+  'rightShoulder',
+  'rightWrist',
+];
 
 let capture;
 let videoRatio, videoWidth, videoHeight, videoOffsetX, videoOffsetY;
@@ -58,11 +77,11 @@ function setup() {
 
   capture.hide();
 
+  // Setup GUI
   gui.add(parameters, 'knownDistEyeCm', 2.5, 3.8);
   gui.add(parameters, 'motionThreshold', 0, 1);
   gui.add(parameters, 'motionCountThreshold', 0, 300, 10);
 
-  // Setup GUI
   const poseNetFolder = gui.addFolder('PoseNet');
   poseNetFolder.add(poseNet, 'minConfidence', 0, 1);
   poseNetFolder.add(poseNet, 'maxPoseDetections', 1, 8, 1);
