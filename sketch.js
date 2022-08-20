@@ -24,6 +24,7 @@ let parameters = {
   keypointThreshold: 0.2,
   knownDistEyeCm: 3.3,
   motionThreshold: 0.3,
+  motionCountThreshold: 50,
 }
 
 function setup() {
@@ -59,6 +60,7 @@ function setup() {
 
   gui.add(parameters, 'knownDistEyeCm', 2.5, 3.8);
   gui.add(parameters, 'motionThreshold', 0, 1);
+  gui.add(parameters, 'motionCountThreshold', 0, 300, 10);
 
   // Setup GUI
   const poseNetFolder = gui.addFolder('PoseNet');
@@ -106,11 +108,12 @@ function draw() {
   background(0);
 
   // Render capture image to canvas, preserving aspect ratio
-  updateVideoSize()
+  updateVideoSize();
   image(capture, videoOffsetX, videoOffsetY, videoWidth, videoHeight);
 
   updateZonePixelPosSize();
   calculateMotionInZones();
+  notifyZoneTriggers();
 
   // Draw things
   push();
@@ -120,7 +123,7 @@ function draw() {
   translate(offX, offY);
   scale(videoRatio);
 
-  if (debug) drawVideoRect()
+  if (debug) drawVideoRect();
 
   drawKeypoints();
   drawSkeleton();
@@ -190,8 +193,13 @@ function drawZones() {
     const kpName = zone.relativeTo;
     const kp = poseResults.pose[kpName];
     if (kp.confidence >= 0.5) {
-      stroke(255, 0, 0);
-      fill(255, 0, 0, 80);
+      if (zone._triggered) {
+        stroke(255, 255, 0);
+        fill(255, 255, 0, 40);
+      } else {
+        stroke(255, 0, 0);
+        fill(255, 0, 0, 40);
+      }
       rect(zone._x, zone._y, zone._w, zone._h);
     }
   }
@@ -287,5 +295,12 @@ function calculateMotionInZones() {
     }
 
     capture.updatePixels();
+  }
+}
+
+function notifyZoneTriggers() {
+  for (let i = 0; i < zones.length; i++) {
+    const zone = zones[i];
+    zone._triggered = zone.motion >= parameters.motionCountThreshold;
   }
 }
