@@ -32,9 +32,8 @@ let poseNet;
 let posesResults = [];
 let previousPixels;
 
-const zones = [
-  { x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' }
-];
+let zones = [];
+let nextZoneId = 0;
 const zoneFolders = [];
 
 let parameters = {
@@ -90,11 +89,60 @@ function setup() {
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']);
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1);
 
-  updateZoneFolders();
+  const zonesCtrlFolder = gui.addFolder("Zones");
+  zonesCtrlFolder.add(window, 'addZone')
+  zonesCtrlFolder.add(window, 'saveZones')
+  zonesCtrlFolder.add(window, 'loadZones')
+
+  // add a default zone as a starting point...
+  addZone({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
 
   setInterval(() => {
     document.getElementById("framerate").innerText = getFrameRate().toFixed(2);
   }, 250);
+}
+
+function saveZones() {
+  let writer = createWriter('zones.json');
+  writer.write(JSON.stringify(zones));
+  writer.close();
+}
+
+function loadZones() {
+  const fileInput = document.getElementById("fileInput");
+  fileInput.onchange = (ev) => {
+    var reader = new FileReader();
+    reader.onload = (e) => {
+      console.log("read", e.target.result)
+      zones = JSON.parse(e.target.result)
+    };
+    reader.readAsText(ev.target.files[0]);
+  }
+  fileInput.click();
+}
+
+function addZone(newZone) {
+  const randomKeypoint = KEYPOINT_TYPES[Math.floor(Math.random() * KEYPOINT_TYPES.length)];
+  const id = nextZoneId;
+  zones.push({
+    x: 0,
+    y: 0,
+    width: 4,
+    height: 4,
+    relativeTo: randomKeypoint,
+    ...newZone,
+    id,
+    remove: () => removeZone(id)
+  });
+  nextZoneId += 1;
+  updateZoneFolders();
+  console.log("Zones:", zones);
+}
+
+function removeZone(idx) {
+  console.log("Remove zone id", idx)
+  zones = zones.filter(zone => zone.id != idx);
+  updateZoneFolders();
 }
 
 function updateZoneFolders() {
@@ -112,6 +160,7 @@ function updateZoneFolders() {
     zoneFolder.add(zone, 'width', 0, 30);
     zoneFolder.add(zone, 'height', 0, 40);
     zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES);
+    zoneFolder.add(zone, 'remove');
     zoneFolders.push(zoneFolder);
   }
 }
@@ -266,8 +315,6 @@ function updateZonePixelPosSize() {
 }
 
 function calculateMotionInZones() {
-  if (zones.length == 0) return;
-
   capture.loadPixels();
 
   if (capture.pixels.length > 0) {
