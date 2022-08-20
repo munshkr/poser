@@ -2,19 +2,25 @@
   "name": "poser",
   "version": "0.1.0",
   "description": "Estimate pose from a webcam and detect motion changes to trigger WebSocket/OSC messages",
-  "main": "index.js",
-  "repository": "git@github.com:munshkr/camtrig.git",
+  "repository": "https://github.com/munshkr/poser",
   "author": "Damián Silvani <munshkr@gmail.com>",
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "concurrently \"npm run start:ws\" \"npm run start:web\"",
-    "start:web": "live-server --port=3000 public/",
-    "start:ws": "node server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "start": "static-serve dist/ -p 3000",
+    "bridge": "node bridge.js"
+  },
+  "devDependencies": {
+    "concurrently": "^7.3.0",
+    "static-serve": "^0.0.1",
+    "vite": "^3.0.7"
   },
   "dependencies": {
-    "concurrently": "^7.3.0",
-    "live-server": "^1.2.2",
-    "osc-js": "^2.3.2"
+    "lil-gui": "^0.17.0",
+    "ml5": "^0.12.2",
+    "osc-js": "^2.3.2",
+    "p5js-wrapper": "^1.2.3"
   }
 }

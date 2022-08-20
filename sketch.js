@@ -1,6 +1,11 @@
+import { sketch } from 'p5js-wrapper';
+import GUI from 'lil-gui';
+import OSC, { STATUS } from 'osc-js';
+import './style.css'
+
 const debug = false;
 
-const gui = new lil.GUI();
+const gui = new GUI();
 const osc = new OSC();
 
 const camWidth = 640;
@@ -43,7 +48,7 @@ let parameters = {
   motionCountThreshold: 50,
 }
 
-function setup() {
+sketch.setup = async () => {
   createCanvas(windowWidth, windowHeight);
 
   // Connect to WS server (port 8080 when not specified)
@@ -63,6 +68,7 @@ function setup() {
   capture.size(camWidth, camHeight);
 
   // Create a new poseNet method
+  const ml5 = await import('ml5');
   const options = {
     flipHorizontal: false,
     detectionType: 'single',
@@ -90,68 +96,79 @@ function setup() {
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']).name("Detection type");
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1).name("Keypoint threshold");
 
+  const zoneController = new ZoneController(zones);
   const zonesCtrlFolder = gui.addFolder("Zones");
-  zonesCtrlFolder.add(window, 'saveZones').name("Save")
-  zonesCtrlFolder.add(window, 'loadZones').name("Load")
-  zonesCtrlFolder.add(window, 'addZone').name("Add")
-  zonesCtrlFolder.add(window, 'removeAllZones').name("Remove all")
+  zonesCtrlFolder.add(zoneController, 'saveZones').name("Save")
+  zonesCtrlFolder.add(zoneController, 'loadZones').name("Load")
+  zonesCtrlFolder.add(zoneController, 'addZone').name("Add")
+  zonesCtrlFolder.add(zoneController, 'removeAllZones').name("Remove all")
 
   // add a default zone as a starting point...
-  addZone({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
+  zoneController.addZone({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
 
   setInterval(() => {
     document.getElementById("framerate").innerText = getFrameRate().toFixed(2);
   }, 250);
 }
 
-function saveZones() {
-  let writer = createWriter('zones.json');
-  writer.write(JSON.stringify(zones));
-  writer.close();
-}
-
-function loadZones() {
-  const fileInput = document.getElementById("fileInput");
-  fileInput.onchange = (ev) => {
-    var reader = new FileReader();
-    reader.onload = (e) => {
-      console.log("read", e.target.result)
-      zones = JSON.parse(e.target.result)
-    };
-    reader.readAsText(ev.target.files[0]);
+class ZoneController {
+  constructor(zones) {
+    this.zones = zones;
   }
-  fileInput.click();
-}
 
-function removeAllZones() {
-  if (zones.length == 0 || confirm("Are you sure you want to remove all zones?")) {
-    zones = [];
+  saveZones() {
+    let writer = createWriter('zones.json');
+    writer.write(JSON.stringify(this.zones));
+    writer.close();
+  }
+
+  loadZones() {
+    const fileInput = document.getElementById("fileInput");
+    fileInput.onchange = (ev) => {
+      var reader = new FileReader();
+      reader.onload = (e) => {
+        console.log("read", e.target.result)
+        this.zones.splice(0, this.zones.length)
+        const newZones = JSON.parse(e.target.result)
+        this.zones.push(...newZones)
+      };
+      reader.readAsText(ev.target.files[0]);
+    }
+    fileInput.click();
+  }
+
+  addZone(newZone) {
+    const randomKeypoint = KEYPOINT_TYPES[Math.floor(Math.random() * KEYPOINT_TYPES.length)];
+    const id = nextZoneId;
+    this.zones.push({
+      x: 0,
+      y: 0,
+      width: 4,
+      height: 4,
+      relativeTo: randomKeypoint,
+      ...newZone,
+      id,
+      remove: () => this.removeZone(id)
+    });
+    nextZoneId += 1;
+    updateZoneFolders();
+    console.log("Zones:", zones);
+  }
+
+  removeZone(idx) {
+    console.log("Remove zone id", idx)
+    const newZones = this.zones.filter(zone => zone.id != idx);
+    this.zones.splice(0, this.zones.length)
+    this.zones.push(...newZones)
     updateZoneFolders();
   }
-}
 
-function addZone(newZone) {
-  const randomKeypoint = KEYPOINT_TYPES[Math.floor(Math.random() * KEYPOINT_TYPES.length)];
-  const id = nextZoneId;
-  zones.push({
-    x: 0,
-    y: 0,
-    width: 4,
-    height: 4,
-    relativeTo: randomKeypoint,
-    ...newZone,
-    id,
-    remove: () => removeZone(id)
-  });
-  nextZoneId += 1;
-  updateZoneFolders();
-  console.log("Zones:", zones);
-}
-
-function removeZone(idx) {
-  console.log("Remove zone id", idx)
-  zones = zones.filter(zone => zone.id != idx);
-  updateZoneFolders();
+  removeAllZones() {
+    if (zones.length == 0 || confirm("Are you sure you want to remove all zones?")) {
+      this.zones.splice(0, this.zones.length)
+      updateZoneFolders();
+    }
+  }
 }
 
 function updateZoneFolders() {
@@ -174,7 +191,7 @@ function updateZoneFolders() {
   }
 }
 
-function windowResized() {
+sketch.windowResized = () => {
   resizeCanvas(windowWidth, windowHeight);
 }
 
@@ -182,7 +199,7 @@ function modelReady() {
   console.log('Model Loaded');
 }
 
-function draw() {
+sketch.draw = () => {
   background(0);
 
   // Render capture image to canvas, preserving aspect ratio
@@ -381,10 +398,12 @@ function calculateMotionInZones() {
 }
 
 function notifyZone(zoneId, isOn) {
+  if (osc.status() !== STATUS.IS_OPEN) return;
   osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, isOn ? 1 : 0))
 }
 
 function notifyZoneDiff(zoneId, zone) {
+  if (osc.status() !== STATUS.IS_OPEN) return;
   osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}-diff`, zone.diffRatio))
   // setTimeout(() => osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, 0)), 250);
 }

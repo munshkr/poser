@@ -1,0 +1,22 @@
+* {
+  font-family: sans-serif;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #010101;
+}
+
+#framerate {
+  position: fixed;
+  display: inline-block;
+  bottom: 16px;
+  left: 16px;
+  font-size: 16px;
+  font-weight: bold;
+  color: red;
+  font-family: monospace;
+  text-align: right;
+  width: 50px;
+}
