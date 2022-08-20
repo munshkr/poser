@@ -3,12 +3,12 @@
 const debug = false;
 
 const gui = new lil.GUI();
+const osc = new OSC();
 
 const camWidth = 640;
 const camHeight = 480;
 
 const KEYPOINT_TYPES = [
-  null,
   'leftAnkle',
   'leftEar',
   'leftElbow',
@@ -48,6 +48,9 @@ let parameters = {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+
+  // Connect to WS server (port 8080 when not specified)
+  osc.open();
 
   // Create capture
   capture = createCapture({
@@ -309,7 +312,9 @@ function calculateMotionInZones() {
       }
 
       // console.debug("motion", diffCount)
-      zone.motion = diffCount;
+      const totalCount = zone._w * zone._h;
+      zone.motion = diffCount
+      zone.diffRatio = diffCount / totalCount;
     }
 
     // Update all pixels of previous frame (using currPixels, not capture.pixels)
@@ -321,8 +326,10 @@ function calculateMotionInZones() {
   }
 }
 
-function notifyZoneTrigger(zone) {
-  console.log("Trigger:", zone);
+function notifyZoneTrigger(zoneNum, zone) {
+  console.log("Trigger:", zoneNum, zone);
+  const message = new OSC.Message(`/zone/${zoneNum}`, zone.diffRatio)
+  osc.send(message)
 }
 
 function handleZoneTriggers() {
@@ -330,7 +337,7 @@ function handleZoneTriggers() {
     const zone = zones[i];
     const isTriggered = zone.motion >= parameters.motionCountThreshold;
     if (!zone._triggered && isTriggered) {
-      notifyZoneTrigger(zone);
+      notifyZoneTrigger(i, zone);
     }
     zone._triggered = isTriggered;
   }

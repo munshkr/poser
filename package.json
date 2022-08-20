@@ -8,9 +8,13 @@
   "license": "Apache-2.0",
   "private": false,
   "scripts": {
-    "start": "live-server"
+    "start": "concurrently \"npm run start:ws\" \"npm run start:web\"",
+    "start:web": "live-server --port=3000",
+    "start:ws": "node server.js"
   },
   "dependencies": {
-    "live-server": "^1.2.2"
+    "concurrently": "^7.3.0",
+    "live-server": "^1.2.2",
+    "osc-js": "^2.3.2"
   }
 }
