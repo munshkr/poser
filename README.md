@@ -11,4 +11,4 @@ Uses [p5](https://p5js.org/) and
 
 Run `npm install` to install dependencies.
 
-Run `npm start` to start the server. It will open a browser tab for you.
+Run `npm start` to start the web server and WebSockets/OSC bridge.
