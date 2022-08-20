@@ -78,21 +78,23 @@ function setup() {
   capture.hide();
 
   // Setup GUI
-  gui.add(parameters, 'knownDistEyeCm', 2.5, 3.8);
-  gui.add(parameters, 'motionThreshold', 0, 1);
-  gui.add(parameters, 'motionCountThreshold', 0, 300, 10);
+  const motionFolder = gui.addFolder("Motion Detection")
+  motionFolder.add(parameters, 'knownDistEyeCm', 2.5, 3.8).name("Eyes distance (cm)")
+  motionFolder.add(parameters, 'motionThreshold', 0, 1).name("Motion threshold");
+  motionFolder.add(parameters, 'motionCountThreshold', 0, 300, 10).name("Motion count threshold");
 
   const poseNetFolder = gui.addFolder('PoseNet');
-  poseNetFolder.add(poseNet, 'minConfidence', 0, 1);
-  poseNetFolder.add(poseNet, 'maxPoseDetections', 1, 8, 1);
-  poseNetFolder.add(poseNet, 'scoreThreshold', 0, 1);
-  poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']);
-  poseNetFolder.add(parameters, 'keypointThreshold', 0, 1);
+  poseNetFolder.add(poseNet, 'minConfidence', 0, 1).name("Min. confidence");
+  poseNetFolder.add(poseNet, 'maxPoseDetections', 1, 8, 1).name("Max. pose detections");
+  poseNetFolder.add(poseNet, 'scoreThreshold', 0, 1).name("Score threshold");
+  poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']).name("Detection type");
+  poseNetFolder.add(parameters, 'keypointThreshold', 0, 1).name("Keypoint threshold");
 
   const zonesCtrlFolder = gui.addFolder("Zones");
-  zonesCtrlFolder.add(window, 'addZone')
-  zonesCtrlFolder.add(window, 'saveZones')
-  zonesCtrlFolder.add(window, 'loadZones')
+  zonesCtrlFolder.add(window, 'saveZones').name("Save")
+  zonesCtrlFolder.add(window, 'loadZones').name("Load")
+  zonesCtrlFolder.add(window, 'addZone').name("Add")
+  zonesCtrlFolder.add(window, 'removeAllZones').name("Remove all")
 
   // add a default zone as a starting point...
   addZone({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
@@ -119,6 +121,13 @@ function loadZones() {
     reader.readAsText(ev.target.files[0]);
   }
   fileInput.click();
+}
+
+function removeAllZones() {
+  if (zones.length == 0 || confirm("Are you sure you want to remove all zones?")) {
+    zones = [];
+    updateZoneFolders();
+  }
 }
 
 function addZone(newZone) {
@@ -155,12 +164,12 @@ function updateZoneFolders() {
   for (let i = 0; i < zones.length; i++) {
     const zone = zones[i];
     const zoneFolder = gui.addFolder(`Zone ${i + 1}`);
-    zoneFolder.add(zone, 'x', -30, 30);
-    zoneFolder.add(zone, 'y', -30, 30);
-    zoneFolder.add(zone, 'width', 0, 30);
-    zoneFolder.add(zone, 'height', 0, 40);
-    zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES);
-    zoneFolder.add(zone, 'remove');
+    zoneFolder.add(zone, 'x', -30, 30).name("X");
+    zoneFolder.add(zone, 'y', -30, 30).name("Y");
+    zoneFolder.add(zone, 'width', 0, 30).name("Width");
+    zoneFolder.add(zone, 'height', 0, 40).name("Height");
+    zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES).name("Relative to");
+    zoneFolder.add(zone, 'remove').name("Remove");
     zoneFolders.push(zoneFolder);
   }
 }
