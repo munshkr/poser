@@ -9,7 +9,7 @@
   "private": false,
   "scripts": {
     "start": "concurrently \"npm run start:ws\" \"npm run start:web\"",
-    "start:web": "live-server --port=3000",
+    "start:web": "live-server --port=3000 public/",
     "start:ws": "node server.js"
   },
   "dependencies": {

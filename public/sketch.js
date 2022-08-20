@@ -1,5 +1,3 @@
-// https://kylemcdonald.github.io/cv-examples/
-
 const debug = false;
 
 const gui = new lil.GUI();
@@ -326,19 +324,22 @@ function calculateMotionInZones() {
   }
 }
 
-function notifyZoneTrigger(zoneNum, zone) {
-  console.log("Trigger:", zoneNum, zone);
-  const message = new OSC.Message(`/zone/${zoneNum}`, zone.diffRatio)
-  osc.send(message)
+function notifyZone(zoneId, isOn) {
+  osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, isOn ? 1 : 0))
+}
+
+function notifyZoneDiff(zoneId, zone) {
+  osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}-diff`, zone.diffRatio))
+  // setTimeout(() => osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, 0)), 250);
 }
 
 function handleZoneTriggers() {
   for (let i = 0; i < zones.length; i++) {
     const zone = zones[i];
     const isTriggered = zone.motion >= parameters.motionCountThreshold;
-    if (!zone._triggered && isTriggered) {
-      notifyZoneTrigger(i, zone);
-    }
+    if (!zone._triggered && isTriggered) notifyZone(i, true);
+    if (zone._triggered && !isTriggered) notifyZone(i, false);
+    if (isTriggered) notifyZoneDiff(i, zone);
     zone._triggered = isTriggered;
   }
 }

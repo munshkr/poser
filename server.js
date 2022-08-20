@@ -2,19 +2,18 @@ const OSC = require('osc-js')
 
 const config = {
   wsServer: { port: 8080 },
-  udpClient: { port: 9129 },
+  udpClient: { port: 6010 },  // TidalCycles control port
   udpServer: { port: 9130 },
 }
 const osc = new OSC({ plugin: new OSC.BridgePlugin(config) })
 
-osc.on('/zone/*', (message, rinfo) => {
+osc.on('*', (message, rinfo) => {
   console.log(message.address, message.args)
 })
 
 osc.on('open', () => {
-  console.log("Port is open now.")
-  // const message = new OSC.Message('/test', 12.221, 'hello')
-  // osc.send(message)
+  console.log(`Port ${config.wsServer.port} is open now.`)
+  console.log(`Will redirect messages to UDP port ${config.udpClient.port}`)
 })
 
 osc.open()
