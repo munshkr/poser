@@ -113,7 +113,7 @@ function draw() {
 
   updateZonePixelPosSize();
   calculateMotionInZones();
-  notifyZoneTriggers();
+  handleZoneTriggers();
 
   // Draw things
   push();
@@ -285,7 +285,7 @@ function calculateMotionInZones() {
         }
       }
 
-      console.log("motion", diffCount)
+      // console.debug("motion", diffCount)
       zone.motion = diffCount;
     }
 
@@ -298,9 +298,17 @@ function calculateMotionInZones() {
   }
 }
 
-function notifyZoneTriggers() {
+function notifyZoneTrigger(zone) {
+  console.log("Trigger:", zone);
+}
+
+function handleZoneTriggers() {
   for (let i = 0; i < zones.length; i++) {
     const zone = zones[i];
-    zone._triggered = zone.motion >= parameters.motionCountThreshold;
+    const isTriggered = zone.motion >= parameters.motionCountThreshold;
+    if (!zone._triggered && isTriggered) {
+      notifyZoneTrigger(zone);
+    }
+    zone._triggered = isTriggered;
   }
 }
