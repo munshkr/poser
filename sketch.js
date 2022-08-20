@@ -16,7 +16,7 @@ let posesResults = [];
 let previousPixels;
 
 const zones = [
-  { x: -8, y: -7, width: 3, height: 3, relativeTo: 'rightEye' }
+  { x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' }
 ];
 const zoneFolders = [];
 
@@ -109,6 +109,11 @@ function draw() {
 
   // Render capture image to canvas, preserving aspect ratio
   updateVideoSize();
+
+  push();
+  translate(width, 0);
+  scale(-1, 1);
+
   image(capture, videoOffsetX, videoOffsetY, videoWidth, videoHeight);
 
   updateZonePixelPosSize();
@@ -116,7 +121,6 @@ function draw() {
   handleZoneTriggers();
 
   // Draw things
-  push();
 
   const offX = width / 2 - videoWidth / 2
   const offY = height / 2 - videoHeight / 2
