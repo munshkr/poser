@@ -1,6 +1,7 @@
 import { sketch } from 'p5js-wrapper';
 import GUI from 'lil-gui';
 import OSC, { STATUS } from 'osc-js';
+import ZoneController from './ZoneController';
 import './style.css'
 
 const debug = false;
@@ -10,26 +11,6 @@ const osc = new OSC();
 
 const camWidth = 640;
 const camHeight = 480;
-
-const KEYPOINT_TYPES = [
-  'leftAnkle',
-  'leftEar',
-  'leftElbow',
-  'leftEye',
-  'leftHip',
-  'leftKnee',
-  'leftShoulder',
-  'leftWrist',
-  'nose',
-  'rightAnkle',
-  'rightEar',
-  'rightElbow',
-  'rightEye',
-  'rightHip',
-  'rightKnee',
-  'rightShoulder',
-  'rightWrist',
-];
 
 let capture;
 let videoRatio, videoWidth, videoHeight, videoOffsetX, videoOffsetY;
@@ -74,7 +55,7 @@ sketch.setup = async () => {
     detectionType: 'single',
     maxPoseDetections: 1,
   };
-  poseNet = ml5.poseNet(capture, options, modelReady);
+  poseNet = ml5.poseNet(capture, options, () => console.log('Model Loaded'));
   // This sets up an event that fills the global variable "poses"
   // with an array every time new poses are detected
   poseNet.on('pose', function (results) {
@@ -96,107 +77,20 @@ sketch.setup = async () => {
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']).name("Detection type");
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1).name("Keypoint threshold");
 
-  const zoneController = new ZoneController(zones);
-  const zonesCtrlFolder = gui.addFolder("Zones");
-  zonesCtrlFolder.add(zoneController, 'saveZones').name("Save")
-  zonesCtrlFolder.add(zoneController, 'loadZones').name("Load")
-  zonesCtrlFolder.add(zoneController, 'addZone').name("Add")
-  zonesCtrlFolder.add(zoneController, 'removeAllZones').name("Remove all")
+  const zonesController = new ZoneController(zones);
+  zonesController.addZonesFolderTo(gui);
 
   // add a default zone as a starting point...
-  zoneController.addZone({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
+  zonesController.add({ x: 5, y: -7, width: 4, height: 4, relativeTo: 'leftEye' });
 
+  // FIXME Use text() on sketch.draw
   setInterval(() => {
     document.getElementById("framerate").innerText = getFrameRate().toFixed(2);
   }, 250);
 }
 
-class ZoneController {
-  constructor(zones) {
-    this.zones = zones;
-  }
-
-  saveZones() {
-    let writer = createWriter('zones.json');
-    writer.write(JSON.stringify(this.zones));
-    writer.close();
-  }
-
-  loadZones() {
-    const fileInput = document.getElementById("fileInput");
-    fileInput.onchange = (ev) => {
-      var reader = new FileReader();
-      reader.onload = (e) => {
-        console.log("read", e.target.result)
-        this.zones.splice(0, this.zones.length)
-        const newZones = JSON.parse(e.target.result)
-        this.zones.push(...newZones)
-      };
-      reader.readAsText(ev.target.files[0]);
-    }
-    fileInput.click();
-  }
-
-  addZone(newZone) {
-    const randomKeypoint = KEYPOINT_TYPES[Math.floor(Math.random() * KEYPOINT_TYPES.length)];
-    const id = nextZoneId;
-    this.zones.push({
-      x: 0,
-      y: 0,
-      width: 4,
-      height: 4,
-      relativeTo: randomKeypoint,
-      ...newZone,
-      id,
-      remove: () => this.removeZone(id)
-    });
-    nextZoneId += 1;
-    updateZoneFolders();
-    console.log("Zones:", zones);
-  }
-
-  removeZone(idx) {
-    console.log("Remove zone id", idx)
-    const newZones = this.zones.filter(zone => zone.id != idx);
-    this.zones.splice(0, this.zones.length)
-    this.zones.push(...newZones)
-    updateZoneFolders();
-  }
-
-  removeAllZones() {
-    if (zones.length == 0 || confirm("Are you sure you want to remove all zones?")) {
-      this.zones.splice(0, this.zones.length)
-      updateZoneFolders();
-    }
-  }
-}
-
-function updateZoneFolders() {
-  // Destroy all zone folders
-  for (let i = 0; i < zoneFolders.length; i++) {
-    const zoneFolder = zoneFolders[i];
-    zoneFolder.destroy();
-  }
-
-  for (let i = 0; i < zones.length; i++) {
-    const zone = zones[i];
-    const zoneFolder = gui.addFolder(`Zone ${i + 1}`);
-    zoneFolder.add(zone, 'x', -30, 30).name("X");
-    zoneFolder.add(zone, 'y', -30, 30).name("Y");
-    zoneFolder.add(zone, 'width', 0, 30).name("Width");
-    zoneFolder.add(zone, 'height', 0, 40).name("Height");
-    zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES).name("Relative to");
-    zoneFolder.add(zone, 'remove').name("Remove");
-    zoneFolders.push(zoneFolder);
-  }
-}
-
 sketch.windowResized = () => {
   resizeCanvas(windowWidth, windowHeight);
-}
-
-function modelReady() {
-  console.log('Model Loaded');
 }
 
 sketch.draw = () => {
