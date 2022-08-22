@@ -2,9 +2,8 @@ import { sketch } from 'p5js-wrapper';
 import GUI from 'lil-gui';
 import OSC, { STATUS } from 'osc-js';
 import ZoneController from './ZoneController';
-import './style.css'
 
-const debug = false;
+import './style.css'
 
 const gui = new GUI();
 const osc = new OSC();
@@ -19,8 +18,6 @@ let posesResults = [];
 let previousPixels;
 
 let zones = [];
-let nextZoneId = 0;
-const zoneFolders = [];
 
 let parameters = {
   keypointThreshold: 0.2,
@@ -116,8 +113,6 @@ sketch.draw = () => {
   translate(offX, offY);
   scale(videoRatio);
 
-  if (debug) drawVideoRect();
-
   drawKeypoints();
   drawSkeleton();
   drawZones();
@@ -135,12 +130,6 @@ function updateVideoSize() {
 
   videoOffsetX = (width / 2) - (videoWidth / 2);
   videoOffsetY = (height / 2) - (videoHeight / 2);
-}
-
-function drawVideoRect() {
-  noFill();
-  stroke(255, 255, 0);
-  rect(0, 0, capture.width - 1, capture.height - 1);
 }
 
 // A function to draw ellipses over the detected keypoints
