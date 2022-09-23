@@ -19,10 +19,11 @@ export const KEYPOINT_TYPES = [
 ];
 
 export default class ZoneController {
-  constructor(zones) {
+  constructor(zones, fileInput) {
     this.zones = zones;
     this._zoneGuiFolders = [];
     this._nextZoneId = 0;
+    this._fileInput = fileInput;
   }
 
   addZonesFolderTo(gui) {
@@ -41,18 +42,18 @@ export default class ZoneController {
   }
 
   import() {
-    const fileInput = document.getElementById("fileInput");
-    fileInput.onchange = (ev) => {
+    this._fileInput.onchange = (ev) => {
       var reader = new FileReader();
       reader.onload = (e) => {
         console.log("read", e.target.result)
         this.zones.splice(0, this.zones.length)
         const newZones = JSON.parse(e.target.result)
         this.zones.push(...newZones)
+        this._updateZoneFolders();
       };
       reader.readAsText(ev.target.files[0]);
     }
-    fileInput.click();
+    this._fileInput.click();
   }
 
   add(newZone) {
@@ -64,6 +65,7 @@ export default class ZoneController {
       width: 4,
       height: 4,
       relativeTo: randomKeypoint,
+      isAbsPosition: false,
       ...newZone,
       id,
       remove: () => this.remove(id)
@@ -101,11 +103,12 @@ export default class ZoneController {
     for (let i = 0; i < this.zones.length; i++) {
       const zone = this.zones[i];
       const zoneFolder = this._guiFolder.addFolder(`Zone ${i + 1}`);
-      zoneFolder.add(zone, 'x', -30, 30).name("X");
-      zoneFolder.add(zone, 'y', -30, 30).name("Y");
+      zoneFolder.add(zone, 'x', -100, 100).name("X");
+      zoneFolder.add(zone, 'y', -100, 100).name("Y");
       zoneFolder.add(zone, 'width', 0, 30).name("Width");
       zoneFolder.add(zone, 'height', 0, 40).name("Height");
       zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES).name("Relative to");
+      zoneFolder.add(zone, 'isAbsPosition').name("Absolute position")
       zoneFolder.add(zone, 'remove').name("Remove");
       this._zoneGuiFolders.push(zoneFolder);
     }
