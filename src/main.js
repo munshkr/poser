@@ -1,6 +1,7 @@
 import { sketch } from 'p5js-wrapper';
 import GUI from 'lil-gui';
 import OSC, { STATUS } from 'osc-js';
+import { WebMidi } from 'webmidi'
 import ZoneController from './ZoneController';
 
 import './style.css'
@@ -31,6 +32,8 @@ sketch.setup = async () => {
 
   // Connect to WS server (port 8080 when not specified)
   osc.open();
+
+  enableMIDI();
 
   // Create capture
   capture = createCapture({
@@ -118,6 +121,17 @@ sketch.draw = () => {
   drawZones();
 
   pop();
+}
+
+function enableMIDI() {
+  WebMidi.enable(function (err) {
+    if (err) {
+      console.error("WebMidi could not be enabled.", err);
+    } else {
+      console.log("WebMidi enabled!");
+      console.log("Outputs:", WebMidi.outputs);
+    }
+  });
 }
 
 function updateVideoSize() {
@@ -281,14 +295,25 @@ function calculateMotionInZones() {
 }
 
 function notifyZone(zoneId, isOn) {
+  if (isOn) {
+    WebMidi.outputs.forEach(o => o.channels[1].playNote(36 + zoneId))
+  } else {
+    WebMidi.outputs.forEach(o => o.channels[1].stopNote(36 + zoneId))
+  }
+  // WebMidi.outputs.forEach(o => o.channels[1].sendControlChange(zoneId, isOn ? 127 : 0))
+  console.log("zone", zoneId, isOn)
+
   if (osc.status() !== STATUS.IS_OPEN) return;
   osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, isOn ? 1 : 0))
 }
 
 function notifyZoneDiff(zoneId, zone) {
+  WebMidi.outputs.forEach(o => o.channels[1].sendControlChange(20 + zoneId, Math.round(zone.diffRatio * 127)))
+  console.log("zoneDiff", zoneId, zone.diffRatio)
+  // setTimeout(() => osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, 0)), 250);
+
   if (osc.status() !== STATUS.IS_OPEN) return;
   osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}-diff`, zone.diffRatio))
-  // setTimeout(() => osc.send(new OSC.Message(`/ctrl`, `zone${zoneId}`, 0)), 250);
 }
 
 function handleZoneTriggers() {

@@ -2,8 +2,7 @@ const OSC = require('osc-js')
 
 const config = {
   wsServer: { port: 8080 },
-  udpClient: { port: 6010 },  // TidalCycles control port
-  udpServer: { port: 9130 },
+  udpClient: { port: 57120 },
 }
 const osc = new OSC({ plugin: new OSC.BridgePlugin(config) })
 
