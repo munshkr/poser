@@ -216,10 +216,17 @@ function updateZonePixelPosSize() {
     const kpName = zone.relativeTo;
     const kp = poseResults.pose[kpName];
     if (kp.confidence >= 0.5) {
-      zone._x = Math.round(kp.x + zone.x / r);
-      zone._y = Math.round(kp.y + zone.y / r);
-      zone._w = Math.round(zone.width / r);
-      zone._h = Math.round(zone.height / r);
+      if (zone.isAbsPosition) {
+        zone._x = Math.round(zone.x * 10);
+        zone._y = Math.round(zone.y * 10);
+        zone._w = Math.round(zone.width * 10);
+        zone._h = Math.round(zone.height * 10);
+      } else {
+        zone._x = Math.round(kp.x + zone.x / r);
+        zone._y = Math.round(kp.y + zone.y / r);
+        zone._w = Math.round(zone.width / r);
+        zone._h = Math.round(zone.height / r);
+      }
     }
   }
 }

@@ -65,6 +65,7 @@ export default class ZoneController {
       width: 4,
       height: 4,
       relativeTo: randomKeypoint,
+      isAbsPosition: false,
       ...newZone,
       id,
       remove: () => this.remove(id)
@@ -102,11 +103,12 @@ export default class ZoneController {
     for (let i = 0; i < this.zones.length; i++) {
       const zone = this.zones[i];
       const zoneFolder = this._guiFolder.addFolder(`Zone ${i + 1}`);
-      zoneFolder.add(zone, 'x', -30, 30).name("X");
-      zoneFolder.add(zone, 'y', -30, 30).name("Y");
+      zoneFolder.add(zone, 'x', -100, 100).name("X");
+      zoneFolder.add(zone, 'y', -100, 100).name("Y");
       zoneFolder.add(zone, 'width', 0, 30).name("Width");
       zoneFolder.add(zone, 'height', 0, 40).name("Height");
       zoneFolder.add(zone, 'relativeTo', KEYPOINT_TYPES).name("Relative to");
+      zoneFolder.add(zone, 'isAbsPosition').name("Absolute position")
       zoneFolder.add(zone, 'remove').name("Remove");
       this._zoneGuiFolders.push(zoneFolder);
     }
