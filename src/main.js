@@ -74,7 +74,8 @@ sketch.setup = async () => {
   poseNetFolder.add(poseNet, 'detectionType', ['single', 'multiple']).name("Detection type");
   poseNetFolder.add(parameters, 'keypointThreshold', 0, 1).name("Keypoint threshold");
 
-  const zonesController = new ZoneController(zones);
+  const fileInput = document.getElementById("file");
+  const zonesController = new ZoneController(zones, fileInput);
   zonesController.addZonesFolderTo(gui);
 
   // add a default zone as a starting point...

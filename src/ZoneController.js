@@ -19,10 +19,11 @@ export const KEYPOINT_TYPES = [
 ];
 
 export default class ZoneController {
-  constructor(zones) {
+  constructor(zones, fileInput) {
     this.zones = zones;
     this._zoneGuiFolders = [];
     this._nextZoneId = 0;
+    this._fileInput = fileInput;
   }
 
   addZonesFolderTo(gui) {
@@ -41,18 +42,18 @@ export default class ZoneController {
   }
 
   import() {
-    const fileInput = document.getElementById("fileInput");
-    fileInput.onchange = (ev) => {
+    this._fileInput.onchange = (ev) => {
       var reader = new FileReader();
       reader.onload = (e) => {
         console.log("read", e.target.result)
         this.zones.splice(0, this.zones.length)
         const newZones = JSON.parse(e.target.result)
         this.zones.push(...newZones)
+        this._updateZoneFolders();
       };
       reader.readAsText(ev.target.files[0]);
     }
-    fileInput.click();
+    this._fileInput.click();
   }
 
   add(newZone) {
