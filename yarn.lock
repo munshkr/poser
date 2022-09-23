@@ -2,6 +2,13 @@
 # yarn lockfile v1
 
 
+"@babel/runtime@^7.17.9":
+  version "7.19.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.19.0.tgz#22b11c037b094d27a8a2504ea4dcff00f50e2259"
+  integrity sha512-eR8Lo9hnDS7tqkO7NsV+mKvCmv5boaXFSZ70DnfhcgiEne8hv9oCEd36Klw74EtizEqLsy4YnW8UWwpBVolHZA==
+  dependencies:
+    regenerator-runtime "^0.13.4"
+
 "@blakeembrey/deque@^1.0.3":
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/@blakeembrey/deque/-/deque-1.0.5.tgz#f4fa17fc5ee18317ec01a763d355782c7b395eaf"
@@ -185,6 +192,11 @@
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/@types/webgl2/-/webgl2-0.0.4.tgz#c3b0f9d6b465c66138e84e64cb3bdf8373c2c279"
   integrity sha512-PACt1xdErJbMUOUweSrbVM7gSIYm1vTncW2hF6Os/EeWi6TXYAYMPp+8v6rzHmypE5gHrxaxZNXgMkJVIdZpHw==
+
+"@types/webmidi@^2.0.6":
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/@types/webmidi/-/webmidi-2.0.6.tgz#c9b1428bbc5d5f49cc6201eae0dc5e2b3fd23e0e"
+  integrity sha512-sfS0A5IryqmBrUpcGPipEPeFdpqmZzP6b6lZFxHKgz5n2Vhzh4yJ5P2TvoDUhDjqJyv0Y25ng0Qodgo2Vu08ug==
 
 accepts@~1.3.5, accepts@~1.3.8:
   version "1.3.8"
@@ -754,6 +766,13 @@ destroy@1.2.0:
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.2.0.tgz#4803735509ad8be552934c67df614f94e66fa015"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
 
+djipevents@^2.0.5:
+  version "2.0.6"
+  resolved "https://registry.yarnpkg.com/djipevents/-/djipevents-2.0.6.tgz#9da598d1f59659d3f13d94dcdbd76f92545a23de"
+  integrity sha512-2vS7/OVdqocBAIVPbxhk36swE4HnjUL1muoibrkoaCaEAEAF/ww8QbYm55PqlzMp51pvD01wHr/CkZmKZdrI/g==
+  dependencies:
+    "@babel/runtime" "^7.17.9"
+
 ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
@@ -1239,6 +1258,11 @@ isomorphic-fetch@^2.1.1:
     node-fetch "^1.0.1"
     whatwg-fetch ">=0.10.0"
 
+jazz-midi@^1.7.6:
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/jazz-midi/-/jazz-midi-1.7.6.tgz#6bd3a9cb6dce0109271252c8c682ac04184c4018"
+  integrity sha512-vKCmBpotb1y+kEbRlu43COar2LzV46uOTTzyM/zTx5LR7WUTWle7FFC8rphqBVdryW66QtOyUA2N/DWZToBang==
+
 "js-tokens@^3.0.0 || ^4.0.0":
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
@@ -1253,6 +1277,14 @@ json-stringify-pretty-compact@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/json-stringify-pretty-compact/-/json-stringify-pretty-compact-2.0.0.tgz#e77c419f52ff00c45a31f07f4c820c2433143885"
   integrity sha512-WRitRfs6BGq4q8gTgOy4ek7iPFXjbra0H3PmDLKm2xnZ+Gh1HUhiKGgCZkSPNULlP7mvfu6FV/mOLhCarspADQ==
+
+jzz@^1.4.5:
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/jzz/-/jzz-1.5.2.tgz#1fdc0a08e1c4cc10341d4f554a640bd0b994c1c2"
+  integrity sha512-58V274YyqaFavqI0FXcx2JCO4X8bSPuvwxlF8t2i+xlaWXSSenhExNzRkn/ubixdc0JNfsLV3+UX/baMw539ww==
+  dependencies:
+    "@types/webmidi" "^2.0.6"
+    jazz-midi "^1.7.6"
 
 lil-gui@^0.17.0:
   version "0.17.0"
@@ -1569,6 +1601,11 @@ readdirp@~3.6.0:
   integrity sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==
   dependencies:
     picomatch "^2.2.1"
+
+regenerator-runtime@^0.13.4:
+  version "0.13.9"
+  resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.9.tgz#8925742a98ffd90814988d7566ad30ca3b263b52"
+  integrity sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==
 
 require-directory@^2.1.1:
   version "2.1.1"
@@ -2341,6 +2378,15 @@ webidl-conversions@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
   integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+
+webmidi@^3.0.21:
+  version "3.0.21"
+  resolved "https://registry.yarnpkg.com/webmidi/-/webmidi-3.0.21.tgz#a1faf28618779146c941eb559a4e1822408cb6a5"
+  integrity sha512-SStCLo099908jR0duYUTstVHNlKh9A/WvXIF5ED2ShGnE2MAy28UhrdzgjLsyDzOiBn8Od3ngT8g/MVa2TC5hg==
+  dependencies:
+    djipevents "^2.0.5"
+  optionalDependencies:
+    jzz "^1.4.5"
 
 whatwg-fetch@>=0.10.0:
   version "3.6.2"
